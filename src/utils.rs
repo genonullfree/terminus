@@ -65,20 +65,41 @@ pub fn scan_elf_exports(opt: Opt) {
         return;
     }
 
+    let mut count = 0;
+    let mut matched_files = 0;
+    let mut matches = 0;
     // For each filepath in the input vector...
-    for (_num, item) in files.iter().enumerate() {
+    for item in files.iter() {
         // Scan the file for exported symbols
         // TODO: Parallelize / thread this
-        if scan_elf(item, &opt).is_ok() {
+        if let Ok(r) = scan_elf(item, &opt) {
             // Clear the terminal line and print the previously scanned file
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
             print!("\r[+] Scanned file: {}", item);
             io::stdout().flush().unwrap();
-        }
+            count += 1;
+            if r > 0 {
+                matched_files += 1;
+            }
+            matches += r;
+        };
     }
+
+    execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+    let switch = if opt.imported {
+        "import".to_owned()
+    } else {
+        "export".to_owned()
+    };
+
+    let footer = format!(
+        "\r[#] Scanned {} files, {} {} matches in {} files",
+        count, matches, switch, matched_files
+    );
+    println!("{}", footer.bold().underline());
 }
 
-fn scan_elf(filename: &str, opt: &Opt) -> Result<(), Error> {
+fn scan_elf(filename: &str, opt: &Opt) -> Result<usize, Error> {
     // TODO: Find better way to validate Elf files
     let mut elf_file = File::open(filename).unwrap();
     let mut elf_buf = Vec::<u8>::new();
@@ -95,19 +116,20 @@ fn scan_elf(filename: &str, opt: &Opt) -> Result<(), Error> {
         out = r2p.cmd("iE").unwrap();
     }
 
+    let mut count: usize = 0;
     for i in &opt.search {
         if out.contains(i) {
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
             let found = format!("\r[!] {} matched {}", filename, i);
             println!("{}", found.bold().underline());
-            print_matching_exports(&out, &opt.search);
+            count += print_matching_exports(&out, &opt.search);
         }
     }
 
-    Ok(())
+    Ok(count)
 }
 
-fn print_matching_exports(a: &str, search: &[String]) {
+fn print_matching_exports(a: &str, search: &[String]) -> usize {
     let list = a.split('\n').collect::<Vec<&str>>();
 
     let mut out = Vec::<&str>::new();
@@ -122,8 +144,10 @@ fn print_matching_exports(a: &str, search: &[String]) {
 
     if !out.is_empty() {
         println!("nth paddr      vaddr      bind   type size lib name");
-        for o in out {
+        for o in &out {
             println!("{}", o);
         }
     }
+
+    out.len()
 }
