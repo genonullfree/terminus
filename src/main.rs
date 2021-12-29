@@ -20,7 +20,7 @@ pub struct Opt {
     dir: PathBuf,
 }
 
-fn read_elf(filename: &str) -> Result<(), Error> {
+fn read_elf(filename: &str, search: &[String]) -> Result<(), Error> {
     // TODO: Find better way to validate Elf files
     let mut elf_file = File::open(filename).unwrap();
     let mut elf_buf = Vec::<u8>::new();
@@ -32,7 +32,11 @@ fn read_elf(filename: &str) -> Result<(), Error> {
     r2p.cmd("af").unwrap();
     let out = r2p.cmd("iE").unwrap();
 
-    println!("{} ==> {}", filename, out);
+    for i in search {
+        if out.contains(i) {
+            println!("\r[!] {} exports {}", filename, i);
+        }
+    }
 
     Ok(())
 }
