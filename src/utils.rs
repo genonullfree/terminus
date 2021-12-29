@@ -1,4 +1,8 @@
 use crate::*;
+use crossterm::execute;
+use crossterm::terminal::{Clear, ClearType};
+use std::io;
+use std::io::{stdout, Write};
 use std::path::Path;
 
 fn get_file_list(opt: &Opt) -> Vec<String> {
@@ -56,7 +60,14 @@ pub fn load_dyns(opt: Opt) -> Result<(), Error> {
 
     // For each filepath in the input vector...
     for (_num, item) in files.iter().enumerate() {
-        read_elf(item);
+        match read_elf(item) {
+            Ok(_) => {
+                execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+                print!("\r[+] Scanning file: {}", item);
+                io::stdout().flush().unwrap();
+            }
+            Err(s) => (), //println!("Error {:?} on {}", s, item),
+        }
     }
 
     Ok(())

@@ -20,27 +20,29 @@ pub struct Opt {
     dir: PathBuf,
 }
 
-fn read_elf(filename: &str) {
+fn read_elf(filename: &str) -> Result<(), Error> {
     let mut elf_file = File::open(filename).unwrap();
     let mut elf_buf = Vec::<u8>::new();
     elf_file.read_to_end(&mut elf_buf).unwrap();
 
-    let elf = Elf::from_bytes(&elf_buf).unwrap();
+    let elf = Elf::from_bytes(&elf_buf)?;
 
     if let Elf::Elf64(e) = elf {
-        println!("{:?} header: {:?}", e, e.header());
+        //        println!("{:?} header: {:?}", e, e.header());
 
         for p in e.program_header_iter() {
-            println!("{:x?}", p);
+            //            println!("{:x?}", p);
         }
 
         for s in e.section_header_iter() {
-            println!("{:x?}", s);
+            //            println!("{:x?}", s);
         }
 
         let s = e.lookup_section(".text");
-        println!("{:?}", s);
+        //        println!("{:?}", s);
     }
+
+    Ok(())
 }
 
 fn main() -> Result<(), Error> {
