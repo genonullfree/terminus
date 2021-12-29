@@ -1,4 +1,5 @@
 use crate::*;
+use colored::*;
 use crossterm::execute;
 use crossterm::terminal::{Clear, ClearType};
 use elf_rs::*;
@@ -67,6 +68,7 @@ pub fn scan_elf_exports(opt: Opt) {
     // For each filepath in the input vector...
     for (_num, item) in files.iter().enumerate() {
         // Scan the file for exported symbols
+        // TODO: Parallelize / thread this
         if scan_elf(item, &opt.search).is_ok() {
             // Clear the terminal line and print the previously scanned file
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
@@ -90,10 +92,33 @@ fn scan_elf(filename: &str, search: &[String]) -> Result<(), Error> {
 
     for i in search {
         if out.contains(i) {
-            // TODO: Print better info
-            println!("\r[!] {} exports {}", filename, i);
+            execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
+            let found = format!("\r[!] {} matched {}", filename, i);
+            println!("{}", found.bold().underline());
+            print_matching_exports(&out, search);
         }
     }
 
     Ok(())
+}
+
+fn print_matching_exports(a: &str, search: &[String]) {
+    let list = a.split('\n').collect::<Vec<&str>>();
+
+    let mut out = Vec::<&str>::new();
+
+    for line in list {
+        for s in search {
+            if line.contains(s) {
+                out.push(line);
+            }
+        }
+    }
+
+    if !out.is_empty() {
+        println!("nth paddr      vaddr      bind   type size lib name");
+        for o in out {
+            println!("{}", o);
+        }
+    }
 }
