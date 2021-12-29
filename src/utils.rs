@@ -69,7 +69,7 @@ pub fn scan_elf_exports(opt: Opt) {
     for (_num, item) in files.iter().enumerate() {
         // Scan the file for exported symbols
         // TODO: Parallelize / thread this
-        if scan_elf(item, &opt.search).is_ok() {
+        if scan_elf(item, &opt).is_ok() {
             // Clear the terminal line and print the previously scanned file
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
             print!("\r[+] Scanned file: {}", item);
@@ -78,7 +78,7 @@ pub fn scan_elf_exports(opt: Opt) {
     }
 }
 
-fn scan_elf(filename: &str, search: &[String]) -> Result<(), Error> {
+fn scan_elf(filename: &str, opt: &Opt) -> Result<(), Error> {
     // TODO: Find better way to validate Elf files
     let mut elf_file = File::open(filename).unwrap();
     let mut elf_buf = Vec::<u8>::new();
@@ -88,14 +88,19 @@ fn scan_elf(filename: &str, search: &[String]) -> Result<(), Error> {
     // Scan Elf file for exported symbols
     let mut r2p = R2Pipe::spawn(filename, None).unwrap();
     r2p.cmd("af").unwrap();
-    let out = r2p.cmd("iE").unwrap();
+    let out;
+    if opt.imported {
+        out = r2p.cmd("ii").unwrap();
+    } else {
+        out = r2p.cmd("iE").unwrap();
+    }
 
-    for i in search {
+    for i in &opt.search {
         if out.contains(i) {
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
             let found = format!("\r[!] {} matched {}", filename, i);
             println!("{}", found.bold().underline());
-            print_matching_exports(&out, search);
+            print_matching_exports(&out, &opt.search);
         }
     }
 
