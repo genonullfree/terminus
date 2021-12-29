@@ -14,6 +14,10 @@ pub struct Opt {
     /// Directory to search in
     #[structopt(short, long, default_value = "/lib")]
     dir: PathBuf,
+
+    /// Match imported instead of exported functions
+    #[structopt(short, long)]
+    imported: bool,
 }
 
 fn main() {
