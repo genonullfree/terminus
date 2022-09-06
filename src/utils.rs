@@ -3,7 +3,7 @@ use colored::*;
 use crossterm::execute;
 use crossterm::terminal::{Clear, ClearType};
 use elf_rs::*;
-use r2pipe::R2Pipe;
+use r2pipe::{R2Pipe, R2PipeSpawnOptions};
 use std::fs::File;
 use std::io;
 use std::io::Read;
@@ -106,15 +106,20 @@ fn scan_elf(filename: &str, opt: &Opt) -> Result<usize, Error> {
     elf_file.read_to_end(&mut elf_buf).unwrap();
     let _ = Elf::from_bytes(&elf_buf)?;
 
+    // Pass '-2' as argument to silence errors
+    let arg = R2PipeSpawnOptions {
+        exepath: "r2".to_owned(),
+        args: vec!["-2"],
+    };
+
     // Scan Elf file for exported symbols
-    let mut r2p = R2Pipe::spawn(filename, None).unwrap();
+    let mut r2p = R2Pipe::spawn(filename, Some(arg)).unwrap();
     r2p.cmd("af").unwrap();
-    let out;
-    if opt.imported {
-        out = r2p.cmd("ii").unwrap();
+    let out = if opt.imported {
+        r2p.cmd("ii").unwrap()
     } else {
-        out = r2p.cmd("iE").unwrap();
-    }
+        r2p.cmd("iE").unwrap()
+    };
 
     let mut count: usize = 0;
     for i in &opt.search {
