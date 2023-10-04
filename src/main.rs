@@ -3,7 +3,7 @@ use structopt::StructOpt;
 
 mod utils;
 
-/// Terminus is an application for quickly locating exported or imported functions in Elf files
+/// Terminus is an application for quickly locating exported or imported functions in Elf/PE files
 
 #[derive(Debug, StructOpt)]
 pub struct Opt {
@@ -24,6 +24,6 @@ fn main() {
     // Process arguments
     let opt = Opt::from_args();
 
-    // Scan Elf exports
-    utils::scan_elf_exports(opt);
+    // Scan exports
+    utils::scan_all_exports(opt);
 }

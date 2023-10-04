@@ -4,9 +4,7 @@ use crossterm::execute;
 use crossterm::terminal::{Clear, ClearType};
 use elf_rs::*;
 use r2pipe::{R2Pipe, R2PipeSpawnOptions};
-use std::fs::File;
 use std::io;
-use std::io::Read;
 use std::io::{stdout, Write};
 use std::path::Path;
 
@@ -55,7 +53,7 @@ fn scope_dir(dir: &Path) -> Result<Vec<String>, Error> {
     Ok(files)
 }
 
-pub fn scan_elf_exports(opt: Opt) {
+pub fn scan_all_exports(opt: Opt) {
     // Get all files recursively
     let files = get_file_list(&opt);
 
@@ -72,7 +70,7 @@ pub fn scan_elf_exports(opt: Opt) {
     for item in files.iter() {
         // Scan the file for exported symbols
         // TODO: Parallelize / thread this
-        if let Ok(r) = scan_elf(item, &opt) {
+        if let Ok(r) = scan_file(item, &opt) {
             // Clear the terminal line and print the previously scanned file
             execute!(stdout(), Clear(ClearType::CurrentLine)).unwrap();
             print!("\r[+] Scanned file: {}", item);
@@ -99,20 +97,14 @@ pub fn scan_elf_exports(opt: Opt) {
     println!("{}", footer.bold().underline());
 }
 
-fn scan_elf(filename: &str, opt: &Opt) -> Result<usize, Error> {
-    // TODO: Find better way to validate Elf files
-    let mut elf_file = File::open(filename).unwrap();
-    let mut elf_buf = Vec::<u8>::new();
-    elf_file.read_to_end(&mut elf_buf).unwrap();
-    let _ = Elf::from_bytes(&elf_buf)?;
-
+fn scan_file(filename: &str, opt: &Opt) -> Result<usize, Error> {
     // Pass '-2' as argument to silence errors
     let arg = R2PipeSpawnOptions {
         exepath: "r2".to_owned(),
         args: vec!["-2"],
     };
 
-    // Scan Elf file for exported symbols
+    // Scan for exported symbols
     let mut r2p = R2Pipe::spawn(filename, Some(arg)).unwrap();
     r2p.cmd("af").unwrap();
     let out = if opt.imported {

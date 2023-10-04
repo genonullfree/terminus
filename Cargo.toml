@@ -1,6 +1,6 @@
 [package]
 name = "terminus"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["geno nullfree <nullfree.geno@gmail.com>"]
 license = "BSD-3-Clause"
 description = "Terminus is an application for quickly locating exported or imported functions in Elf files"
