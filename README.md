@@ -1,6 +1,6 @@
 # Terminus
 
-Terminus is an application that locates the ELF files that import or export a specific function. This can be used to quickly identify which library you may want to look at next when reversing a new software system by pinpointing the library that exports a specific version of a function that you are looking for.
+Terminus is an application that locates ELF/PE files that import or export a specific function. This can be used to quickly identify which library you may want to look at next when reversing a new software system by pinpointing the library that exports a specific version of a function that you are looking for.
 
 ## Usage
 
